@@ -13,6 +13,7 @@ class Event:
 
 @dataclass
 class Tweet:
+    event_id : str
     tweet_id : str
     author_id : str
     created_at : datetime
