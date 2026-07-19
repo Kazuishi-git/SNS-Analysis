@@ -13,12 +13,13 @@ class XPostCollector:
         self.writer = CSVWriter()
         self.state = StateManager()
 
+    # 最初の _ は内部でしか使わない、外から呼び出さないことの印
     def _convert_response(
             self,
             event: Event,
             response: Response,
     ) -> list[Tweet]:
-        """ Convert X API response to Tweet object. """
+        """ Convert an X API response into Tweet object. """
 
         tweets: list[Tweet] = []
 
