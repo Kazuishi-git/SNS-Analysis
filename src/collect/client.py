@@ -7,7 +7,8 @@ class XClient:
     DEFAULT_TWEET_FIELDS = (
         "created_at",
         "author_id",
-        "public_metrics"
+        "public_metrics",
+        "text",
     )
 
     DEFAULT_MAX_RESULT = 100
