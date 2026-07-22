@@ -4,13 +4,13 @@ from __future__ import annotations
 import csv
 from dataclasses import asdict
 
-from src.utils.config import DATA_DIR
+from src.utils.config import RAW_DATA_DIR
 from .models import Tweet
 
 class CSVWriter:
     
     def __init__(self) -> None:
-        self.output_dir = DATA_DIR
+        self.output_dir = RAW_DATA_DIR
         self.output_dir.mkdir(
             parents = True,
             exist_ok = True,

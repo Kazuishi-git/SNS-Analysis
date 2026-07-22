@@ -3,13 +3,19 @@
 from pathlib import Path
 import json
 
-from src.utils.config import DATA_DIR
+from src.utils.config import STATE_FILE
 
 class StateManager:
     # Load and Save collector state
     
     def __init__(self) -> None:
-        self.state_file = DATA_DIR / "state.json"
+
+        self.state_file = STATE_FILE
+
+        self.state_file.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
     
     def load(self) -> dict | None:
         # Load the saved state.  Returns None if the state file does not exist.
