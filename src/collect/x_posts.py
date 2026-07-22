@@ -6,6 +6,8 @@ from .models import Event, Tweet
 from .writer import CSVWriter
 from .state import StateManager
 
+from src.utils.logger import logger
+
 class XPostCollector:
     """ Implement the post collection workflow. """
     def __init__(self):
@@ -67,11 +69,18 @@ class XPostCollector:
         if state:
             next_token = state.get("next_token")
 
+        collected_count = 0
+
+        logger.info("Start collecting event: %s", event.event_id)
+
         while True :
-            next_token = self._collect_page(
+
+            next_token, count = self._collect_page(
                 event,
                 next_token,
             )
+
+            collected_count += count
 
             # whileの中に置くことにより、一つずつ保存：checkpoint
             self.state.save(
@@ -82,7 +91,18 @@ class XPostCollector:
                 }
             )
 
+            logger.info(
+                "Collected %d tweets",
+                count,
+                collected_count,
+            )
+
+            if collected_count >= event.max_tweet:
+                logger.info("Reached max_tweet (%d)", event.max_tweet)
+                break
+
             if next_token is None:
+                logger.info("No next page. Collection finished.")
                 break
 
 
@@ -90,7 +110,7 @@ class XPostCollector:
             self,
             event: Event,
             next_token: str | None,
-    ) -> str | None:
+    ) -> tuple[str | None, int]:
         
         """ Collect a single page of posts and return the next_token."""
         
@@ -114,4 +134,5 @@ class XPostCollector:
 
         next_token = meta.get("next_token")
 
-        return next_token
+        # 何件取得したかわかるようにlenを追加(7/22)
+        return next_token, len(page_tweets)
