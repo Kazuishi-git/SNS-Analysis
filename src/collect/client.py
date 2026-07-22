@@ -29,7 +29,7 @@ class XClient:
             start_time=event.start_time,
             end_time=event.end_time,
             tweet_fields=self.DEFAULT_TWEET_FIELDS,
-            max_result=self.DEFAULT_MAX_RESULT,
+            max_results=self.DEFAULT_MAX_RESULT,
             next_token=next_token,
         )
 
