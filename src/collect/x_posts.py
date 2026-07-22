@@ -98,6 +98,7 @@ class XPostCollector:
                 {
                     "event_id": event.event_id,
                     "next_token": next_token,
+                    "updated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
                 }
             )
 
