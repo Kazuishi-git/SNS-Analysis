@@ -13,11 +13,16 @@ load_dotenv(PROJECT_ROOT / ".env")
 # API
 BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 
-" ディレクトリ"
+
+# Data directories
 DATA_DIR = PROJECT_ROOT / "data"
 
+# Output directory
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
 RESULT_DIR = PROJECT_ROOT / "result"
+
+# State file
+STATE_FILE = RAW_DATA_DIR / "state.json"
