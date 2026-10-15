@@ -75,13 +75,17 @@ class XPostCollector:
 
         logger.info("Start collecting event: %s", event.event_id)
 
-        while True :
+        while collected_count < event.max_tweet:
+
+            # 上限までに取得できる残り件数
+            remaining_count = event.max_tweet - collected_count
 
             # 1ページ分の投稿を取得して保存
             try: 
                 next_token, count  = self._collect_page(
                     event,
-                    next_token
+                    next_token,
+                    remaining_count
                 )
 
             except TweepyException:
@@ -99,14 +103,14 @@ class XPostCollector:
                 {
                     "event_id": event.event_id,
                     "next_token": next_token,
-                    "updated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
+                    "updated_at": datetime.now(UTC).replace(microsecond=0).isoformat()
                 }
             )
 
             logger.info(
                 "Collected %d tweets (total: %d)",
                 count,
-                collected_count,
+                collected_count
             )
 
             if collected_count >= event.max_tweet:
@@ -122,6 +126,7 @@ class XPostCollector:
             self,
             event: Event,
             next_token: str | None,
+            remaining_count: int,
     ) -> tuple[str | None, int]:
         
         """ Collect a single page of posts and return the next_token."""
@@ -135,6 +140,9 @@ class XPostCollector:
             event = event,
             response = page_response,
         )
+
+        page_tweets = page_tweets[:remaining_count]
+
         self.writer.write(
             filename=f"{event.event_id}.csv",
             tweets = page_tweets,
