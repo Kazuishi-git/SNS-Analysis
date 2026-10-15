@@ -8,6 +8,8 @@ from .state import StateManager
 
 from src.utils.logger import logger
 
+from tweepy.errors import TweepyException
+
 class XPostCollector:
     """ Implement the post collection workflow. """
     def __init__(self):
@@ -66,7 +68,7 @@ class XPostCollector:
         # Fetch posts from X API
         next_token = None
         
-        if state:
+        if state and state.get("event_id") == event.event_id:
             next_token = state.get("next_token")
 
         collected_count = 0
@@ -75,10 +77,20 @@ class XPostCollector:
 
         while True :
 
-            next_token, count = self._collect_page(
-                event,
-                next_token,
-            )
+            # 1ページ分の投稿を取得して保存
+            try: 
+                next_token, count  = self._collect_page(
+                    event,
+                    next_token
+                )
+
+            except TweepyException:
+                # API関連のエラーを記録し、上位へ伝える
+                logger.exception(
+                    "Failed to collect posts for event: %s",
+                    event.event_id
+                )
+                raise
 
             collected_count += count
 
@@ -92,7 +104,7 @@ class XPostCollector:
             )
 
             logger.info(
-                "Collected %d tweets",
+                "Collected %d tweets (total: %d)",
                 count,
                 collected_count,
             )
