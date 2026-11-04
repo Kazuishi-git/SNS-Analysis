@@ -60,7 +60,7 @@ def analyze_event_metrics(post : pd.DataFrame) -> pd.DataFrame:
         post.groupby("event_id")
         .agg(
             post_count=("tweet_id", "count"),
-            unique_users=("author_id", "unique"),
+            unique_users=("author_id", "nunique"),
             avg_likes=("likes", "mean"),
             median_likes=("likes", "median"),
             avg_retweets=("retweets", "mean"),
