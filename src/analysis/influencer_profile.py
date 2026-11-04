@@ -53,6 +53,24 @@ def analyze_user_metrics(posts: pd.DataFrame) -> pd.DataFrame:
         "avg_likes", ascending=False
     )
 
+def analyze_event_metrics(post : pd.DataFrame) -> pd.DataFrame:
+    """ Calculate engagement metrics for each event. """
+
+    event_metrics = (
+        post.groupby("event_id")
+        .agg(
+            post_count=("tweet_id", "count"),
+            unique_users=("author_id", "unique"),
+            avg_likes=("likes", "mean"),
+            median_likes=("likes", "median"),
+            avg_retweets=("retweets", "mean"),
+            median_retweets=("retweets", "median"),
+        )
+        .reset_index()
+    )
+
+    return event_metrics
+
 def main() -> None:
     """ Run influencer profile analysis. """
 
@@ -114,6 +132,19 @@ def main() -> None:
     print(active_users.head(10).to_string(index=False))
 
     print(f"\nActive users: {len(active_users)}")
+
+
+    # イベント
+    event_metrics = analyze_event_metrics(posts)
+
+    event_metrics.to_csv(
+        OUTPUT_DIR / "event_metrics.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    print("\nEvent-level metrics:")
+    print(event_metrics.to_string(index=False))
 
     print(f"\nResults saved to: {OUTPUT_DIR}")
 
