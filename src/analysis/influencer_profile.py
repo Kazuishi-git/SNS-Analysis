@@ -82,29 +82,38 @@ def main() -> None:
     print("\nTop 10 users by average likes:")
     print(user_metrics.head(10).to_string(index=False))
 
-    # 投稿数別のユーザー数
-    print("\nUsers by post count:")
-    print(
+    # 投稿数別のユーザー数と割合
+    post_count_distribution = (
         user_metrics["post_count"]
         .value_counts()
         .sort_index()
-        .head(10)
+        .rename_axis("post_count")
+        .reset_index(name="user_count")
     )
 
-    # 2件以上投稿したユーザー
+    post_count_distribution["percentage"] = (
+        post_count_distribution["user_count"] / len(user_metrics) * 100
+    )
+
+    print("\nUsers by post count:")
+    print(post_count_distribution.to_string(index=False))
+
+    print("\nPosts count statistics:")
+    print(user_metrics["post_count"].describe().to_string())
+
+    # 2件以上（複数回）投稿したユーザー
     active_users = user_metrics[
         user_metrics["post_count"] >= 2
     ].copy()
 
-    print(f"\nUsers with 2 or more posts: {len(active_users)}")
+    active_users = active_users.sort_values(
+        "median_likes", ascending=False
+    )
 
     print("\nTop 10 active users by average likes:")
-    print(
-        active_users
-        .sort_values("avg_likes", ascending=False)
-        .head(10)
-        .to_string(index=False)
-    )
+    print(active_users.head(10).to_string(index=False))
+
+    print(f"\nActive users: {len(active_users)}")
 
     print(f"\nResults saved to: {OUTPUT_DIR}")
 
