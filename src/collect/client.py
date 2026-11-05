@@ -11,6 +11,10 @@ class XClient:
         "text",
     )
 
+    DEFAULT_USER_FIELDS = (
+        "public_metrics",
+    )
+
     DEFAULT_MAX_RESULT = 100
 
     def __init__(self) -> None:
@@ -31,6 +35,18 @@ class XClient:
             tweet_fields=self.DEFAULT_TWEET_FIELDS,
             max_results=self.DEFAULT_MAX_RESULT,
             next_token=next_token,
+        )
+
+    def get_users(
+            self,
+            user_ids: list[str],
+    ) -> Response:
+
+        """ Fetch user information for the given user IDs. """
+
+        response = self.client.get_users(
+            ids = user_ids,
+            user_fields = self.DEFAULT_USER_FIELDS,
         )
 
         return response
