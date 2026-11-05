@@ -23,3 +23,12 @@ class Tweet:
     retweets : int
     replies : int
     quotes : int
+
+@dataclass
+class User:
+    author_id : str
+    followers_count : int
+    following_count : int
+    tweet_count : int
+    listed_count : int
+    retrieved_at : datetime # フォロワー数は変動するため、いつ取得した情報か記録
