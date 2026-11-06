@@ -84,6 +84,29 @@ def calculate_post_er(posts: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
+def aggregate_user_er(posts: pd.DataFrame) -> pd.DataFrame:
+    """ Aggregate engagement metrics by user."""
+    valid_posts = posts.dropna(subset=["er"])
+
+    user_summary = (
+        valid_posts
+        .groupby("author_id")
+        .agg(
+            followers_count=("followers_count", "first"),
+            post_count=("tweet_id", "count"),
+            avg_er=("er", "mean"),
+            median_er=("er", "median"),
+            avg_likes=("likes", "mean"),
+            median_likes=("likes", "median"),
+            avg_retweets=("retweets", "mean"),
+            median_retweets=("retweets", "median"),
+            total_engagement=("engagement_count", "sum"),
+        )
+        .reset_index()
+    )
+
+    return user_summary
+
 
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -93,23 +116,34 @@ def main() -> None:
 
     merged = merge_posts_and_users(posts, users)
 
-    matched = merged["_merge"] == "both"
-    valid_followers = merged["followers_count"].notna()
+    # 投稿単位のEngagementRateを計算
+    post_er = calculate_post_er(merged)
 
-    print(f"Total posts: {len(posts)}")
-    print(f"Total users: {posts['author_id'].nunique()}")
-    print(f"Matched posts: {matched.sum()}")
-    print(f"Unmatched posts: {(~matched).sum()}")
-    print(f"Users loaded: {users['author_id'].nunique()}")
+    # ユーザ単位に集計
+    user_er = aggregate_user_er(post_er)
 
-    # Save merged data for inspection.
-    merged.to_csv(
-        OUTPUT_DIR / "merged_posts.csv",
+    #結果の保存　
+    post_er.to_csv(
+        OUTPUT_DIR / "post_engagement_rate.csv",
         index=False,
         encoding="utf-8-sig",
     )
 
-    print(f"Posts with follower data: {(matched & valid_followers).sum()}")
+    user_er.to_csv(
+        OUTPUT_DIR / "user_engagement_rate.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    matched = merged["_merge"] == "both"
+    valid_followers = merged["followers_count"].notna()
+
+    print(f"Total posts: {len(posts)}")
+    print(f"Posts with valid ER: {post_er['er'].notna().sum()}")
+    print(f"Users with valid ER: {user_er['author_id'].nunique()}")
+    print(f"Average ER: {post_er['er'].mean():.4f}%")
+    print(f"Median ER: {post_er['er'].median():.4f}%")
+
 
 
 if __name__ == "__main__":
