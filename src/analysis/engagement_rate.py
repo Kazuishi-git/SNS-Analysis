@@ -58,6 +58,32 @@ def merge_posts_and_users(
 
     return merged
 
+def calculate_post_er(posts: pd.DataFrame) -> pd.DataFrame:
+    """ Calculate engagement rate for each post. """
+    result = posts.copy()
+
+    engagement_columns = ["likes", "retweets", "replies", "quotes"]
+
+    result["engagement_count"] = result[engagement_columns].sum(
+        axis=1,
+        min_count=len(engagement_columns),
+    )
+
+    # フォロワー数が０または欠損している投稿はengagement_rateを計算しない
+    valid_followers = (
+        result["followers_count"].notna() & (result["followers_count"] > 0)
+    )
+
+    result["er"] = float("nan")
+
+    result.loc[valid_followers, "er"] = (
+        result.loc[valid_followers, "engagement_count"] 
+        / result.loc[valid_followers, "followers_count"]
+        * 100
+    )
+
+    return result
+
 
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
