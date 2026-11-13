@@ -144,3 +144,60 @@ def test_analysis_event_metrics_with_unknown_event(sample_posts):
 
     with pytest.raises(ValueError, match="(?i)unknown event IDs"):
         analyze_event_metrics(invalid_posts)
+
+print("="*10 + "ここまで1回目のサンプルのテスト" + "="*10)
+
+def test_empty_posts():
+    """ Test that empty posts raise an error"""
+
+    empty_posts = pd.DataFrame(
+        columns=[
+            "event_id",
+            "tweet_id",
+            "author_id",
+            "likes",
+            "retweets",
+            "replies",
+            "quotes",
+        ]
+    )
+
+    with pytest.raises(ValueError, match="empty"):
+        analyze_overall_metrics(empty_posts)
+
+
+def test_missing_values(sample_posts):
+    """ Test that missing values raise an error"""
+
+    invalid_posts = sample_posts.copy()
+    invalid_posts.loc[0, "likes"] = None
+
+    with pytest.raises(ValueError, match="Missing values"):
+        analyze_overall_metrics(invalid_posts)
+
+
+def test_duplicate_tweet_ids(sample_posts):
+    """ Test that duplicate tweet IDs raise an error"""
+
+    invalid_posts = pd.concat(
+        [sample_posts, sample_posts.iloc[[0]]],
+        ignore_index=True,
+    )
+
+    with pytest.raises(ValueError, match="Duplicate tweet IDs"):
+        analyze_overall_metrics(invalid_posts)
+
+
+def test_single_post(sample_posts):
+    """ Test that a single post can be analyzed"""
+
+    single_post = sample_posts.iloc[[0]].copy()
+
+    result = analyze_overall_metrics(single_post)
+
+    assert result.iloc[0]["post_count"] == 1
+    assert result.iloc[0]["unique_users"] == 1
+    assert result.iloc[0]["total_engagement"] == 13
+    assert result.iloc[0]["avg_engagement"] == pytest.approx(13.0)
+
+    
