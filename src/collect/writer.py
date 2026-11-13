@@ -3,17 +3,21 @@
 from __future__ import annotations
 import csv
 from dataclasses import asdict
+from pathlib import Path
 
 from src.utils.config import RAW_DATA_DIR
 from .models import Tweet
 
 class CSVWriter:
-    
-    def __init__(self) -> None:
-        self.output_dir = RAW_DATA_DIR
+
+    # 指定がなければ、RAW_DATA_DIRを使う
+    def __init__(self, output_dir: Path = RAW_DATA_DIR) -> None:
+        self.output_dir = output_dir
         self.output_dir.mkdir(
             parents = True,
-            exist_ok = True)
+            exist_ok = True
+        )
+
         # ファイルごとに保存済みのtweet_idを管理する
         self._known_tweet_ids: dict[str, set[str]] = {}
         
