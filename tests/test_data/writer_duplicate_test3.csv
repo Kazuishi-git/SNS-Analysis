@@ -1,0 +1,3 @@
+event_id,tweet_id,author_id,created_at,retrieved_at,text,likes,retweets,replies,quotes
+writer_test,test_001,user_001,2026-11-13 05:45:25.350026+00:00,2026-11-13 05:45:25.350026+00:00,テスト投稿1,10,2,1,0
+writer_test,test_002,user_002,2026-11-13 05:45:25.350026+00:00,2026-11-13 05:45:25.350026+00:00,テスト投稿2,20,3,2,1
