@@ -19,6 +19,58 @@ EVENT_PERIODS = {
     ),
 }
 
+def validate_posts(posts: pd.DataFrame) -> None:
+    """ Validate input posts before analysis """
+
+    required_columns = [
+        "event_id",
+        "tweet_id",
+        "author_id",
+        "likes",
+        "retweets",
+        "replies",
+        "quotes"
+    ]
+
+    # required columns(必須列)の確認 -> 必要なカラムが存在するか
+    missing_columns = [
+        column for column in required_columns
+        if column not in posts.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"Missing required columns: {missing_columns}"
+        )
+
+    # 空のデータがあるか確認
+    if posts.empty:
+        raise ValueError("Input posts are empty.")
+
+    # 欠損値があるかの確認
+    missing_values = posts[required_columns].isna().sum()
+    missing_values = missing_values[missing_values > 0]
+
+    if not missing_values.empty:
+        raise ValueError(
+            f"Missing values found: {missing_values.to_dict()}"
+        )
+
+    # 重複投稿の確認
+    if posts["tweet_id"].duplicated().any():
+        duplicate_ids = (
+            posts.loc[
+                posts["tweet_id"].duplicated(keep=False),
+                "tweet_id",
+            ]
+            .unique()
+            .tolist()
+        )
+
+        raise ValueError(
+            f"Duplicate tweet IDs found: {duplicate_ids[:5]}"
+        )
+
 
 def load_posts() -> pd.DataFrame:
     """ Load and combine all daily CSV files. """
@@ -37,6 +89,8 @@ def load_posts() -> pd.DataFrame:
 def analyze_post_metrics(posts: pd.DataFrame) -> pd.DataFrame:
     """ Calculate descriptive statistics for engagement metrics. """
 
+    validate_posts(posts)
+
     metrics = ["likes", "retweets", "replies", "quotes"]
 
     return posts[metrics].describe(
@@ -45,6 +99,8 @@ def analyze_post_metrics(posts: pd.DataFrame) -> pd.DataFrame:
 
 def analyze_user_metrics(posts: pd.DataFrame) -> pd.DataFrame:
     """ Aggregate engagement metrics by author. """
+
+    validate_posts(posts)
 
     user_metrics = (
         posts.groupby("author_id")
@@ -64,11 +120,13 @@ def analyze_user_metrics(posts: pd.DataFrame) -> pd.DataFrame:
         "avg_likes", ascending=False
     )
 
-def analyze_daily_metrics(post : pd.DataFrame) -> pd.DataFrame:
+def analyze_daily_metrics(posts : pd.DataFrame) -> pd.DataFrame:
     """ Calculate engagement metrics for each day. """
 
+    validate_posts(posts)
+
     daily_metrics = (
-        post.groupby("event_id")
+        posts.groupby("event_id")
         .agg(
             post_count=("tweet_id", "count"),
             unique_users=("author_id", "nunique"),
@@ -105,6 +163,8 @@ def aggregate_engagement_metrics(posts : pd.DataFrame) -> pd.DataFrame :
 def analyze_overall_metrics(posts : pd.DataFrame) -> pd.DataFrame :
     """ Calculate overall engagement metrics """
 
+    validate_posts(posts)
+
     posts = posts.copy()
 
     posts["total_engagement"] = (
@@ -115,6 +175,8 @@ def analyze_overall_metrics(posts : pd.DataFrame) -> pd.DataFrame :
 
 def analyze_event_metrics(posts : pd.DataFrame) -> pd.DataFrame :
     """ Calculate engagement metrics for each product event """
+
+    validate_posts(posts)
 
     posts = posts.copy()
 
@@ -243,22 +305,22 @@ def main() -> None:
     print(daily_metrics.to_string(index=False))
 
     # Overall metrics
-    Overall_metrics = analyze_overall_metrics(posts)
+    overall_metrics = analyze_overall_metrics(posts)
 
-    Overall_metrics.to_csv(
+    overall_metrics.to_csv(
         OUTPUT_DIR / "overall_metrics.csv",
         index=False,
         encoding="utf-8-sig",
     )
 
     print("\nOverall metrics:")
-    print(Overall_metrics.to_string(index=False))
+    print(overall_metrics.to_string(index=False))
 
     # Product event metrics
     event_metrics = analyze_event_metrics(posts)
 
     event_metrics.to_csv(
-        OUTPUT_DIR / "event_metics.csv",
+        OUTPUT_DIR / "event_metrics.csv",
         index=False,
         encoding="utf-8-sig",
     )
