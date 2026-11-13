@@ -1,11 +1,14 @@
 import csv
 from datetime import UTC, datetime
+from pathlib import Path
 
 from src.collect.models import Tweet
 from src.collect.writer import CSVWriter
 
+# テスト用のCSV出力先
+TEST_DATA_DIR = Path(__file__).parent / "test_data"
 
-writer = CSVWriter()
+writer = CSVWriter(output_dir=TEST_DATA_DIR)
 
 # テスト用のCSVファイル名
 filename = "writer_duplicate_test3.csv"
