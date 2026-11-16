@@ -24,7 +24,12 @@ class StateManager:
             return None
         
         with self.state_file.open("r", encoding="utf-8") as f:
-            return json.load(f)
+            state = json.load(f)
+
+        if not isinstance(state, dict):
+            raise ValueError("State file must contain a JSON object")
+
+        return state
        
     
     def save(self, state: dict) -> None:
