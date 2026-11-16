@@ -37,6 +37,8 @@ class XClient:
             next_token=next_token,
         )
 
+        return response
+
     def get_users(
             self,
             user_ids: list[str],
