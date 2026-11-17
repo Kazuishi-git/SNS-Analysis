@@ -45,14 +45,17 @@ class CSVWriter:
 
         # 未保存の投稿だけを抽出
         new_tweets = []
+        new_tweet_ids = set()
+
+        # 重複を除外
         for tweet in tweets:
             tweet_id = str(tweet.tweet_id)
 
-            if tweet_id in known_ids:
+            if tweet_id in known_ids or tweet_id in new_tweet_ids:
                 continue
 
-            new_tweets.append(tweet)
-            known_ids.add(tweet_id)
+            new_tweets.append(tweet)# 書き込み前にはIDを登録しない
+            new_tweet_ids.add(tweet_id)
 
         # 全権が保存済みなら書き込まない
         if not new_tweets:
@@ -63,6 +66,7 @@ class CSVWriter:
 
         fieldnames = list(asdict(new_tweets[0]).keys())
 
+        # CSVへ書き込み
         with csv_path.open("a", newline="", encoding="utf-8",) as f:
             writer = csv.DictWriter(
                 f,
@@ -74,6 +78,9 @@ class CSVWriter:
 
             for tweet in new_tweets:
                 writer.writerow(asdict(tweet))
+
+        # CSVへの書き込みが正常終了した後に保存済みIDとして登録する
+        known_ids.update(new_tweet_ids)
 
     def _load_existing_ids(self, filename: str) -> set[str]:
                 csv_path = self.output_dir / filename

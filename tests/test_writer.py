@@ -1,5 +1,8 @@
 import csv
+import pytest
+
 from datetime import UTC, datetime
+from pathlib import Path
 
 from src.collect.models import Tweet
 from src.collect.writer import CSVWriter
@@ -103,3 +106,42 @@ def test_write_tracks_ids_independently_per_file(tmp_path):
 
     assert first_ids == ["test_001"]
     assert second_ids == ["test_001"]
+
+# after integration test
+def test_write_failure_does_not_register_tweet_ids(tmp_path, monkeypatch):
+    writer = CSVWriter(output_dir=tmp_path)
+
+    tweet = create_tweet("tweet_001")
+
+    original_open = Path.open
+    should_fail = True
+
+    def mocked_open(path, *args, **kwargs):
+        nonlocal should_fail
+
+        if path == tmp_path / "test.csv" and should_fail:
+            should_fail = False
+            raise OSError("Simulated write failure")
+
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", mocked_open)
+
+    # 最初の書き込みは失敗する
+    with pytest.raises(OSError):
+        writer.write("test.csv", [tweet])
+
+    # 失敗した投稿IDが登録されていないことを確認
+    assert "tweet_001" not in writer._known_tweet_ids["test.csv"]
+
+    # 2回目の書き込みは成功する
+    writer.write("test.csv", [tweet])
+
+    # CSVに投稿が保存されたことを確認
+    csv_path = tmp_path / "test.csv"
+
+    with csv_path.open("r", encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f))
+
+    assert len(rows) == 1
+    assert rows[0]["tweet_id"] == "tweet_001"
