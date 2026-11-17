@@ -7,6 +7,8 @@ import src.collect.x_posts as collector_module
 from src.collect.x_posts import XPostCollector
 from src.collect.models import Event
 
+import pytest
+from tweepy.errors import TweepyException
 
 def create_event() -> Event:
     return Event(
@@ -240,3 +242,29 @@ def test_collect_stops_at_max_tweet(monkeypatch):
     saved_state = mock_state.save.call_args.args[0]
 
     assert saved_state["next_token"] == "page_2_token"
+
+
+def test_collect_propagates_api_exception(monkeypatch):
+    # API例外処理のテスト
+    collector, mock_client, mock_writer, mock_state = create_collector(monkeypatch)
+
+    event = create_event()
+
+    mock_state.load.return_value = None
+
+    # APIエラーを再現
+    mock_client.search_posts.side_effect = TweepyException(
+        "API request failed"
+    )
+
+    # もし例外が発生しなければテストは失敗
+    with pytest.raises(TweepyException):
+        collector.collect(event)
+
+    mock_client.search_posts.assert_called_once()
+
+    # CSVに保存されていないことを確認
+    mock_writer.write.assert_not_called()
+
+    # チェックポイントが保存さていないことを確認
+    mock_state.save.assert_not_called()
