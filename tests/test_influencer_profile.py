@@ -3,6 +3,8 @@
 import pandas as pd
 import pytest
 
+from src.analysis import influencer_profile as profile
+
 from src.analysis.influencer_profile import (
     analyze_post_metrics,
     analyze_user_metrics,
@@ -200,4 +202,139 @@ def test_single_post(sample_posts):
     assert result.iloc[0]["total_engagement"] == 13
     assert result.iloc[0]["avg_engagement"] == pytest.approx(13.0)
 
-    
+
+# After test coverage(It showed 67%)
+def test_load_posts_raises_error_when_no_csv_files(tmp_path, monkeypatch):
+    """ Test that an error is raised when no CSV files exist. """
+
+    monkeypatch.setattr(
+        profile,
+        "RAW_DATA_DIR",
+        tmp_path
+    )
+
+    with pytest.raises(FileNotFoundError):
+        profile.load_posts()
+
+
+def test_load_posts_combines_multiple_csv_files(tmp_path, monkeypatch, sample_posts):
+    """ Test that multiple CSV files are combined correctly. """
+
+    monkeypatch.setattr(
+        profile,
+        "RAW_DATA_DIR",
+        tmp_path
+    )
+
+    # CSVファイルを2つ作成
+    sample_posts.iloc[:2].to_csv(  #先頭2行
+        tmp_path / "posts_1.csv",
+        index=False
+    )
+
+    sample_posts.iloc[2:].to_csv(  # 3行目以降
+        tmp_path / "posts_2.csv",
+        index=False
+    )
+
+    result = profile.load_posts()
+
+    assert len(result) == 4
+    assert set(result["tweet_id"]) == {"A", "B", "C", "D"}
+    assert result["author_id"].nunique() == 3
+
+def test_missing_required_columns(sample_posts):
+    """ Test that missing required columns raise an error. """
+
+    invalid_posts = sample_posts.drop(columns=["quotes"])
+
+    with pytest.raises(
+        ValueError,
+        match="Missing required columns"
+    ):
+        analyze_overall_metrics(invalid_posts)
+
+
+
+# test for main
+def test_main_creates_output_files(tmp_path, monkeypatch, sample_posts):
+
+    """ Test that main creates all expected output files. """
+
+    # 出力先をテスト用ディレクトリに変更
+    monkeypatch.setattr(
+        profile,
+        "OUTPUT_DIR",
+        tmp_path
+    )
+
+    # サンプルデータを読み込ませる
+    monkeypatch.setattr(
+        profile,
+        "load_posts",
+        lambda: sample_posts.copy()
+    )
+
+    # main() を実行
+    profile.main()
+
+    expected_files = [
+        "post_metrics.csv",
+        "user_metrics.csv",
+        "daily_metrics.csv",
+        "overall_metrics.csv",
+        "event_metrics.csv"
+    ]
+
+    for filename in expected_files:
+        assert (tmp_path / filename).exists()
+
+def test_main_propagates_load_posts_error(tmp_path, monkeypatch):
+    """ Test that main propagates loading errors. """
+
+    monkeypatch.setattr(
+        profile,
+        "OUTPUT_DIR",
+        tmp_path
+    )
+
+    def mock_load_posts():
+        raise FileNotFoundError("No CSV files found.")
+
+    monkeypatch.setattr(
+        profile,
+        "load_posts",
+        mock_load_posts
+    )
+
+    with pytest.raises(FileNotFoundError):
+        profile.main()
+
+
+def test_main_saves_correct_overall_metrics(tmp_path, monkeypatch, sample_posts):
+    """ Test that main saves correct overall metrics. """
+
+    monkeypatch.setattr(
+        profile,
+        "OUTPUT_DIR",
+        tmp_path
+    )
+
+    monkeypatch.setattr(
+        profile,
+        "load_posts",
+        lambda: sample_posts.copy()
+    )
+
+    profile.main()
+
+    result = pd.read_csv(tmp_path / "overall_metrics.csv")
+
+    assert len(result) == 1
+
+    row = result.iloc[0]
+
+    assert row["post_count"] == 4
+    assert row["unique_users"] == 3
+    assert row["total_engagement"] == 155
+    assert row["avg_engagement"] == pytest.approx(38.75)
