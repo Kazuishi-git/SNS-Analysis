@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import csv
 from dataclasses import asdict
+from pathlib import Path
 
 from src.utils.config import RAW_DATA_DIR
 from .models import User
 
 
 class UserCSVWriter :
-    def __init__(self) -> None:
-        self.output_dir = RAW_DATA_DIR / "users"
+    def __init__(self, output_dir:Path = RAW_DATA_DIR / "users",) -> None:
+        self.output_dir = output_dir
         self.output_dir.mkdir(
             parents=True,
             exist_ok=True,
@@ -48,14 +49,16 @@ class UserCSVWriter :
         known_ids = self.get_existing_user_ids()
 
         new_users = []
+        new_user_ids = set()
+
         for user in users:
             author_id = str(user.author_id)
 
-            if author_id in known_ids:
+            if author_id in known_ids or author_id in new_user_ids:
                 continue
 
             new_users.append(user)
-            known_ids.add(author_id)
+            new_user_ids.add(author_id)
 
         if not new_users:
             return
@@ -82,3 +85,6 @@ class UserCSVWriter :
 
             for user in new_users:
                 writer.writerow(asdict(user))
+
+        # 書き込みが正常に完了し、IDを登録する
+        known_ids.update(new_user_ids)
