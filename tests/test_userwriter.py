@@ -255,3 +255,31 @@ def test_write_does_not_register_ids_when_write_fails(tmp_path,monkeypatch):
     # 最終的にID100が1件だけ存在する
     assert len(rows) == 1
     assert rows[0]["author_id"] == "100"
+
+def test_write_skips_when_all_users_already_exist(tmp_path):
+    writer = UserCSVWriter(output_dir=tmp_path)
+
+    users = [
+        User(
+            author_id="123",
+            followers_count=123,
+            following_count=123,
+            tweet_count=123,
+            listed_count=123,
+            retrieved_at=datetime.now(UTC),
+        )
+    ]
+
+    writer.write(users)
+
+    # 同じユーザーを再度書き込む
+    writer.write(users)
+
+    with writer.csv_path.open(
+        "r",
+        newline="",
+        encoding="utf-8",
+    ) as f:
+        rows = list(csv.DictReader(f))
+
+    assert len(rows) == 1
